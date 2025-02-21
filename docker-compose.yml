@@ -7,14 +7,14 @@ services:
       dockerfile: Dockerfile
     container_name: react-client-dev
     volumes:
-      - ./client:/app
-      - /app/node_modules
+      - ./client:/app:delegated
+      - client_node_modules:/app/node_modules
     ports:
       - "5173:5173"
     environment:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true  # Enable hot reload on Windows/Docker
-    command: npm run dev -- --host 0.0.0.0  # Allow external connections
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"  # Ensure dependencies are installed
 
   backend:
     build:
@@ -22,10 +22,13 @@ services:
       dockerfile: Dockerfile
     container_name: django-backend-dev
     volumes:
-      - ./backend:/app
+      - ./backend:/app:delegated
     ports:
       - "8000:8000"
     environment:
       - DEBUG=1
       - DJANGO_SECRET_KEY=your-secret-key-here
     command: python manage.py runserver 0.0.0.0:8000
+
+volumes:
+  client_node_modules:
