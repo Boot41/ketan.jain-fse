@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Message from '../components/Message';
-import axios from 'axios';
+import { chatApi } from '../services/api';
 
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
@@ -9,28 +9,51 @@ const ChatPage = () => {
   const [loading, setLoading] = useState(true);
   const { authTokens } = useAuth();
 
+  const handleApiError = (error) => {
+    console.error('API Error:', error);
+    let errorMessage = 'An unexpected error occurred. Please try again.';
+
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      if (error.response.status === 401) {
+        errorMessage = 'Your session has expired. Please log in again.';
+      } else if (error.response.status === 403) {
+        errorMessage = 'You do not have permission to perform this action.';
+      } else if (error.response.data && error.response.data.message) {
+        errorMessage = error.response.data.message;
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      errorMessage = 'Unable to reach the server. Please check your internet connection.';
+    }
+
+    return {
+      text: errorMessage,
+      isUserMessage: false,
+      timestamp: new Date(),
+      isError: true
+    };
+  };
+
   useEffect(() => {
     const fetchGreeting = async () => {
       try {
-        const response = await axios.get('/api/greeting/', {
-          headers: {
-            'Authorization': `Bearer ${authTokens.access}`,
-          },
-        });
+        const data = await chatApi.getGreeting();
         setMessages([{
-          text: response.data.message,
+          text: data.message,
           isUserMessage: false,
           timestamp: new Date(),
         }]);
       } catch (error) {
-        console.error('Failed to fetch greeting:', error);
+        setMessages([handleApiError(error)]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchGreeting();
-  }, [authTokens]);
+  }, []);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
@@ -43,32 +66,16 @@ const ChatPage = () => {
       setIsProcessing(true);
 
       try {
-        const response = await axios.post('/api/chat/', {
-          message: input.trim(),
-          session_id: sessionId
-        }, {
-          headers: {
-            'Authorization': `Bearer ${authTokens.access}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const data = await chatApi.sendMessage(input.trim(), sessionId);
 
         const aiMessage = {
-          text: response.data.message,
+          text: data.message,
           isUserMessage: false,
           timestamp: new Date()
         };
         setMessages((prevMessages) => [...prevMessages, aiMessage]);
       } catch (error) {
-        console.error('Failed to send message:', error);
-        // Add error message to chat
-        const errorMessage = {
-          text: 'Sorry, there was an error processing your message. Please try again.',
-          isUserMessage: false,
-          timestamp: new Date(),
-          isError: true
-        };
-        setMessages((prevMessages) => [...prevMessages, errorMessage]);
+        setMessages((prevMessages) => [...prevMessages, handleApiError(error)]);
       } finally {
         setIsProcessing(false);
       }
