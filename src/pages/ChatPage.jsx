@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import Message from '../components/Message';
 
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
@@ -24,24 +25,7 @@ const ChatPage = () => {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '16px' }}>
       <div style={{ flex: 1, overflowY: 'auto', marginBottom: '16px' }}>
         {messages.map((message, index) => (
-          <div
-            key={index}
-            style={{
-              textAlign: message.isUserMessage ? 'right' : 'left',
-              marginBottom: '8px',
-              padding: '8px',
-              backgroundColor: message.isUserMessage ? '#007bff' : '#f1f1f1',
-              color: message.isUserMessage ? '#fff' : '#000',
-              borderRadius: '8px',
-              maxWidth: '70%',
-              alignSelf: message.isUserMessage ? 'flex-end' : 'flex-start',
-            }}
-          >
-            {message.text}
-            <div style={{ fontSize: '12px', color: message.isUserMessage ? '#ddd' : '#666', marginTop: '4px' }}>
-              {message.timestamp.toLocaleTimeString()}
-            </div>
-          </div>
+          <Message key={index} message={message} />
         ))}
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
