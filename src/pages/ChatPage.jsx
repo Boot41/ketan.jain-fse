@@ -1,11 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Message from '../components/Message';
+import axios from 'axios';
 
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(true);
   const { authTokens } = useAuth();
+
+  useEffect(() => {
+    const fetchGreeting = async () => {
+      try {
+        const response = await axios.get('/api/greeting/', {
+          headers: {
+            'Authorization': `Bearer ${authTokens.access}`,
+          },
+        });
+        setMessages([{
+          text: response.data.message,
+          isUserMessage: false,
+          timestamp: new Date(),
+        }]);
+      } catch (error) {
+        console.error('Failed to fetch greeting:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGreeting();
+  }, [authTokens]);
 
   const handleSend = async () => {
     if (input.trim()) {
@@ -23,6 +48,7 @@ const ChatPage = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '16px' }}>
+      {loading && <div style={{ textAlign: 'center', padding: '16px' }}>Loading...</div>}
       <div style={{ flex: 1, overflowY: 'auto', marginBottom: '16px' }}>
         {messages.map((message, index) => (
           <Message key={index} message={message} />
