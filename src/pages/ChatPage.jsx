@@ -32,17 +32,46 @@ const ChatPage = () => {
     fetchGreeting();
   }, [authTokens]);
 
-  const handleSend = async () => {
-    if (input.trim()) {
-      const newMessage = { text: input, isUserMessage: true, timestamp: new Date() };
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-      setInput('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
-      // Simulate AI response (to be replaced with actual OpenAI integration)
-      setTimeout(() => {
-        const aiMessage = { text: 'This is a simulated AI response.', isUserMessage: false, timestamp: new Date() };
+  const handleSend = async () => {
+    if (input.trim() && !isProcessing) {
+      const userMessage = { text: input, isUserMessage: true, timestamp: new Date() };
+      setMessages((prevMessages) => [...prevMessages, userMessage]);
+      setInput('');
+      setIsProcessing(true);
+
+      try {
+        const response = await axios.post('/api/chat/', {
+          message: input.trim(),
+          session_id: sessionId
+        }, {
+          headers: {
+            'Authorization': `Bearer ${authTokens.access}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const aiMessage = {
+          text: response.data.message,
+          isUserMessage: false,
+          timestamp: new Date()
+        };
         setMessages((prevMessages) => [...prevMessages, aiMessage]);
-      }, 1000);
+      } catch (error) {
+        console.error('Failed to send message:', error);
+        // Add error message to chat
+        const errorMessage = {
+          text: 'Sorry, there was an error processing your message. Please try again.',
+          isUserMessage: false,
+          timestamp: new Date(),
+          isError: true
+        };
+        setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -54,18 +83,20 @@ const ChatPage = () => {
           <Message key={index} message={message} />
         ))}
       </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', gap: '8px', opacity: isProcessing ? 0.7 : 1 }}>
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          placeholder="Type a message..."
+          placeholder={isProcessing ? 'Processing...' : 'Type a message...'}
           onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+          disabled={isProcessing}
         />
         <button
           onClick={handleSend}
-          style={{ padding: '8px 16px', borderRadius: '4px', border: 'none', backgroundColor: '#007bff', color: '#fff' }}
+          style={{ padding: '8px 16px', borderRadius: '4px', border: 'none', backgroundColor: '#007bff', color: '#fff', cursor: isProcessing ? 'not-allowed' : 'pointer' }}
+          disabled={isProcessing}
         >
           Send
         </button>
