@@ -206,8 +206,8 @@ class JiraClient:
         try:
             logger.info(f"Searching users with query: {query if query else 'all'}")
             # If query is None or empty, use a wildcard search
-            search_query = query if query else '%'
-            users = self.client.search_users(search_query)
+            search_query = query if query else ''
+            users = self.client.search_users(query=search_query)
             logger.info(f"Found {len(users)} users")
 
             return [{
