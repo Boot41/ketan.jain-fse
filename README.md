@@ -8,6 +8,7 @@ A powerful integration between Jira and OpenAI that helps streamline your projec
   - [Jira API Token](#jira-api-token)
   - [OpenAI API Key](#openai-api-key)
 - [Local Development Setup](#local-development-setup)
+- [Running Tests](#running-tests)
 - [Docker Setup](#docker-setup)
 - [Environment Variables](#environment-variables)
 
@@ -96,6 +97,37 @@ You'll also need:
    ```bash
    npm run dev
    ```
+
+## Running Tests
+
+### Running the Test Suite
+
+To run the test suite, make sure you're in the backend directory and your virtual environment is activated:
+
+```bash
+cd backend
+source venv/bin/activate  # On Windows, use: .\venv\Scripts\activate
+```
+
+Then run the tests using:
+```bash
+python manage.py test core.tests
+```
+
+### Test Coverage Report
+
+To generate a test coverage report:
+
+```bash
+coverage run --source=core manage.py test core.tests
+coverage report
+```
+
+For a detailed HTML report:
+```bash
+coverage html
+```
+This will create a `htmlcov` directory. Open `htmlcov/index.html` in your browser to view the detailed coverage report.
 
 ## Docker Setup
 
