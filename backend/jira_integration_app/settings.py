@@ -37,10 +37,23 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',  # Vite default dev server
     'http://localhost:8000',  # Django dev server
-    'http://localhost',  # Docker environment
+    'http://localhost:80',    # Docker environment HTTP
+    'https://localhost:80',   # Docker environment HTTPS
+    'http://localhost',       # Base localhost HTTP
+    'https://localhost',      # Base localhost HTTPS
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^http://localhost:[0-9]+$',
+]
+
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',  # Vite default dev server
+    'http://localhost:8000',  # Django dev server
+    'http://localhost:80',    # Docker environment HTTP
+    'https://localhost:80',   # Docker environment HTTPS
+    'http://localhost',       # Base localhost HTTP
+    'https://localhost',      # Base localhost HTTPS
 ]
 
 # Application definition
@@ -55,10 +68,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'core',
+    'whitenoise.runserver_nostatic',  # Add WhiteNoise to installed apps
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -98,8 +113,8 @@ REST_FRAMEWORK = {
 # JWT settings
 from datetime import timedelta
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Access token expires in 1 hour
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # Refresh token expires in 1 day
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': False,
@@ -110,13 +125,11 @@ SIMPLE_JWT = {
 }
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
+# Database settings
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -125,8 +138,6 @@ DATABASES = {
 }
 
 # Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -143,24 +154,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-STATIC_URL = 'static/'
-
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # OpenAI settings
@@ -170,3 +169,51 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN')
 JIRA_SERVER_URL = os.getenv('JIRA_SERVER_URL')
 JIRA_USER_EMAIL = os.getenv('JIRA_USER_EMAIL')
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        }
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'core': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'jira': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'openai': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+# Create logs directory if it doesn't exist
+if not os.path.exists('logs'):
+    os.makedirs('logs')
