@@ -123,7 +123,8 @@ class JiraClient:
                 'status': issue.fields.status.name,
                 'description': issue.fields.description or '',
                 'created': str(issue.fields.created),
-                'priority': issue.fields.priority.name if issue.fields.priority else None
+                'priority': issue.fields.priority.name if issue.fields.priority else None,
+                'assignee': issue.fields.assignee.displayName if issue.fields.assignee else None
             } for issue in issues]
 
         except JIRAError as e:

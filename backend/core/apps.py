@@ -7,4 +7,4 @@ class CoreConfig(AppConfig):
     from django.apps import AppConfig
    
     def ready(self):
-            import core.signals  # Import signals when the app is ready
+        pass
